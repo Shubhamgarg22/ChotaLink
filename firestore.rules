@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // URL Shortener Rules with Authentication
+    match /urls/{shortCode} {
+      // Anyone can read URLs (for redirects)
+      allow read: if true;
+      
+      // Only authenticated users can create URLs
+      allow create: if request.auth != null 
+                    && request.resource.data.keys().hasAll(['longUrl', 'shortCode', 'userId', 'userEmail', 'createdAt', 'clicks'])
+                    && request.resource.data.longUrl is string
+                    && request.resource.data.longUrl.size() > 0
+                    && request.resource.data.shortCode == shortCode
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.clicks == 0;
+      
+      // Allow updating click counter and lastAccessed timestamp
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clicks', 'lastAccessed'])
+                    || (request.auth != null 
+                        && resource.data.userId == request.auth.uid);
+      
+      // Only owner can delete their URLs
+      allow delete: if request.auth != null 
+                    && resource.data.userId == request.auth.uid;
+    }
+  }
+}

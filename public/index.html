@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>ShortLink - Modern URL Shortener</title>
+  <meta name="description" content="Shorten your long URLs instantly. Fast, simple, and reliable URL shortener with instant redirection.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><path d='M30 50L40 40M40 40L50 50M40 40V65M60 50C60 60 55 65 45 65C35 65 30 60 30 50' stroke='white' stroke-width='5' stroke-linecap='round' fill='none'/></svg>" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK (v9 - Compat mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+  <!-- 3D Background Elements -->
+  <div class="bg-gradient"></div>
+  <div class="floating-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    <div class="shape shape-4"></div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Header Component -->
+    <header class="header" id="headerComponent">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="18" r="16" stroke="url(#gradient)" stroke-width="3"/>
+            <path d="M12 18L16 14M16 14L20 18M16 14V24M24 18C24 22.418 20.418 26 16 26C11.582 26 8 22.418 8 18" stroke="url(#gradient)" stroke-width="3" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="gradient" x1="0" y1="0" x2="36" y2="36">
+                <stop offset="0%" stop-color="#667eea"/>
+                <stop offset="100%" stop-color="#764ba2"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="logo-text">ShortLink</h1>
+      </div>
+      
+      <div id="authSection" class="auth-section">
+        <div id="userInfo" class="user-info" style="display: none;">
+          <img id="userAvatar" class="user-avatar" src="" alt="User">
+          <span id="userName" class="user-name"></span>
+          <button id="profileBtn" class="profile-btn" title="View Profile">Profile</button>
+          <button id="logoutBtn" class="logout-btn">Logout</button>
+        </div>
+        <button id="loginBtn" class="login-btn">Sign In</button>
+      </div>
+    </header>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="auth-modal" style="display: none;">
+      <div class="auth-modal-content">
+        <button class="close-modal" id="closeModal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        
+        <h2 class="auth-title">Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to manage your shortened URLs</p>
+
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">Login</button>
+          <button class="auth-tab" data-tab="signup">Sign Up</button>
+        </div>
+
+        <form id="authForm" class="auth-form">
+          <div class="form-group">
+            <label for="authEmail">EMAIL</label>
+            <input type="email" id="authEmail" placeholder="Enter your email" required>
+          </div>
+          <div class="form-group">
+            <label for="authPassword">PASSWORD</label>
+            <input type="password" id="authPassword" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" id="authSubmitBtn" class="auth-submit-btn">
+            <span>Sign In</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </form>
+
+        <div class="auth-divider">
+          <span>OR</span>
+        </div>
+
+        <button id="googleSignInBtn" class="google-signin-btn">
+          <svg width="20" height="20" viewBox="0 0 20 20">
+            <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
+            <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
+            <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
+            <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="profile-modal" style="display: none;">
+      <div class="profile-modal-content">
+        <div class="profile-header">
+          <div class="profile-header-top">
+            <h2 class="profile-title">Your Profile</h2>
+            <button class="close-profile" id="closeProfile">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="profile-user-info">
+            <img id="profileUserAvatar" class="profile-user-avatar" src="" alt="User">
+            <div class="profile-user-details">
+              <p class="profile-user-email" id="profileUserEmail"></p>
+              <p class="profile-member-since" id="profileMemberSince"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="profile-stats">
+          <div class="stat-card">
+            <div class="stat-icon total-links">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M13 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V9L13 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M13 2V9H20" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <p class="stat-label">Total Links</p>
+              <p class="stat-value" id="totalLinks">0</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon total-clicks">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 7V12L16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <p class="stat-label">Total Clicks</p>
+              <p class="stat-value" id="totalClicks">0</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon avg-clicks">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3 3V21M3 15L7 11L11 13L21 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <p class="stat-label">Avg Clicks</p>
+              <p class="stat-value" id="avgClicks">0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links Table -->
+        <div class="profile-links-section">
+          <h3 class="profile-links-title">Your Shortened Links</h3>
+          <div class="profile-table-wrapper">
+            <table class="profile-table" id="profileLinksTable">
+              <thead>
+                <tr>
+                  <th>Short Code</th>
+                  <th>Original URL</th>
+                  <th>Clicks</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="profileLinksBody">
+                <!-- Links will be populated here -->
+              </tbody>
+            </table>
+            <div id="noLinksMessage" class="no-links-message" style="display: none;">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                <path d="M24 16V24M24 32H24.02" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+              </svg>
+              <p>No shortened links yet. Create one to get started!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card">
+      <!-- Badge -->
+      <div class="badge">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <circle cx="6" cy="6" r="3" fill="currentColor"/>
+        </svg>
+        <span>100% FREE FOREVER</span>
+      </div>
+
+      <!-- Main Content -->
+      <div id="mainContent" class="content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+          <h1 class="headline">Fast. Secure. Simple<br>URL Shortener</h1>
+          <p class="subheadline">
+            Transform long URLs into short, memorable links. Track clicks, manage your links, and share with confidence. 100% Free Forever.
+          </p>
+        </section>
+
+        <!-- Input Section -->
+        <section id="inputSection" class="input-section" style="display: flex;">
+          <div class="input-wrapper">
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 11C8 11.5304 8.21071 12.0391 8.58579 12.4142C8.96086 12.7893 9.46957 13 10 13H14C14.5304 13 15.0391 12.7893 15.4142 12.4142C15.7893 12.0391 16 11.5304 16 11C16 10.4696 15.7893 9.96086 15.4142 9.58579C15.0391 9.21071 14.5304 9 14 9H10C9.46957 9 8.96086 8.78929 8.58579 8.41421C8.21071 8.03914 8 7.53043 8 7C8 6.46957 8.21071 5.96086 8.58579 5.58579C8.96086 5.21071 9.46957 5 10 5H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <input 
+              type="url" 
+              id="urlInput" 
+              class="url-input" 
+              placeholder="Enter your long URL here..."
+              spellcheck="false"
+            >
+          </div>
+          <button id="shortenBtn" class="shorten-btn">
+            <span class="btn-text">Shorten URL</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </section>
+
+        <!-- Loading State -->
+        <section id="loadingState" class="loading-state" style="display: none;">
+          <div class="spinner"></div>
+          <p class="loading-text">Creating your short link...</p>
+        </section>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span id="errorText">Error message here</span>
+        </div>
+
+        <!-- Result Section -->
+        <section id="resultSection" class="result-section" style="display: none;">
+          <div class="success-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
+              <path d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2 class="result-title">Your short link is ready!</h2>
+          <div class="result-url-container">
+            <a href="#" id="shortUrlLink" class="result-url" target="_blank">https://short.link/abc12</a>
+            <button id="copyBtn" class="copy-btn">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="5" y="5" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3 10H2.5C2.22386 10 2 9.77614 2 9.5V2.5C2 2.22386 2.22386 2 2.5 2H9.5C9.77614 2 10 2.22386 10 2.5V3" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+          <button id="createAnotherBtn" class="create-another-btn">Create Another Link</button>
+        </section>
+
+        <!-- User Links History -->
+        <section id="userLinksSection" class="user-links-section" style="display: none;">
+          <h3 class="links-title">Your Shortened Links</h3>
+          <div id="userLinksList" class="user-links-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Made by Dracula</p>
+    </footer>
+  </div>
+
+  <!-- Load Firebase Config -->
+  <script src="firebase-config.js"></script>
+  <!-- Load Main App -->
+  <script src="main.js"></script>
+</body>
+</html>
